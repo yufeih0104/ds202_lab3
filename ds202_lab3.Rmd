@@ -1,0 +1,124 @@
+---
+title: "ds202_lab3"
+author: "Yufei Huang"
+date: "2021/3/5"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Library
+```{r}
+library(ggplot2)
+library(dplyr)
+library(knitr)
+library(readxl)
+```
+
+```{r, warning=FALSE}
+gss <- readxl::read_xls('GSS.xls')
+gss <- gss[-c(64815,64816),-c(8,10)]
+```
+
+## Question 1
+```{r, warning=FALSE}
+gss$`Marital status` <-as.factor(gss$`Marital status`)
+gss$`General happiness` <-as.factor(gss$`General happiness`)
+gss$`Political party affiliation` <-as.factor(gss$`Political party affiliation`)
+gss$`Respondents sex` <-as.factor(gss$`Respondents sex`)
+gss$`Highest year of school completed` <-as.numeric(gss$`Highest year of school completed`)
+gss$`Political party affiliation` <-as.factor(gss$`Political party affiliation`)
+gss$`Age when first married` <-as.numeric(gss$`Age when first married`)
+str(gss)
+```
+```{r}
+ave_schyear <- gss %>%
+  group_by(`Marital status`) %>%
+  summarize(avg = mean(`Highest year of school completed`, na.rm = T))
+
+ave_schyear %>% 
+  arrange(desc(avg))
+```
+```
+WE can see that people who didn't answer their marital status has average school years of 15.48 years, and people who are widowed have the least average school years which is 11.20 years. People who are never married, divorced, and married have similar average school years around 13 years. People who are separated right now have the average school years of 11.86 years.
+```
+
+## Question 2
+```{r}
+newdata <- gss %>%
+  group_by(`Marital status`) %>%
+  filter(`Highest year of school completed` > mean(`Highest year of school completed`, na.rm = T))
+newdata
+```
+
+## Question 3
+```{r}
+ggplot(gss, aes(x = `General happiness`, fill = `Marital status`)) +
+    geom_bar() +
+    theme_classic()
+summary(gss$`General happiness`)
+```
+```
+Since we define that a person is happy if the response to question is “Very happy” or “Pretty happy”, we can see that people who are happy are mostly married, and many people are never married. These two groups of people are mostly happy. Also we can see that most people are happy with their lives because we have 52386 answers states they're happy.
+```
+
+## Question 4
+```{r}
+ggplot(gss, aes(x = `General happiness`, fill = `Marital status`)) +
+    geom_bar(position='fill')+
+  facet_wrap(~`Political party affiliation`)
+count1 <- nrow(gss[gss$`Marital status`=="Married"& gss$`Political party affiliation`=="Strong democrat" & gss$`General happiness`=="Pretty happy" | gss$`General happiness`=="Very happy",])
+count1
+
+count2 <- nrow(gss[gss$`Marital status`=="Married"& gss$`Political party affiliation`=="Strong republican" & gss$`General happiness`=="Pretty happy" | gss$`General happiness`=="Very happy",])
+count2
+```
+```
+We can see from the plot that each grid has very similar displacement with each others for either Happiness or Marital status. And after testing 1 example about if political party would affect the happiness or marital status, my answer is no.
+Conclusion: political party would not affect the other two variables.
+```
+
+## Question 5
+```{r, warning=F}
+ggplot(gss, aes(x = reorder(`Marital status`, `Highest year of school completed`, FUN = mean), y = `Highest year of school completed`)) + geom_boxplot()
+ave_schyear
+```
+```
+I think people who are Married, divorced or never married, or no answer tend to have higher min and max values of school years than people who are separated or widowed right now. 
+I think some reason for this kind of pattern is because maybe one of the partner may join the military so that they're separated, and maybe they joined the army after high school so they don't have a chance to go to college yet, which can be the reason they are separated with lower education years. People who didn't answer their marital status have the highest average value of educational years, I would assume that these portion who didn't answer their marital status are small, so they could pull their average up.
+```
+
+## Question 6
+
+part 1:
+Would sex make some differences for people's educational year?
+```{r, warning=FALSE, message=FALSE}
+male<- gss[gss$`Respondents sex`=='Male',]
+maleavg <- mean(male$`Highest year of school completed`, na.rm = T)
+
+female<- gss[gss$`Respondents sex`=='Female',]
+femaleavg <- mean(female$`Highest year of school completed`, na.rm = T)
+
+data2 <- data.frame(sex=c("Male", "Female"),
+                    Avg_SchoolYear = c(maleavg, femaleavg))
+data2
+
+ggplot(male, aes(x=`Highest year of school completed`)) + geom_histogram()
+ggplot(female, aes(x=`Highest year of school completed`)) + geom_histogram()
+```
+```
+Both numerical value and graphs showed that sex do not influence the educational years for an individual person.
+```
+
+part2
+Question: Would educational years make differences of the age when they first get married?
+```{r, warning=F}
+ggplot(gss, aes(x=`Highest year of school completed`, y=`Age when first married`)) + geom_point()
+model2 <- lm(gss$`Age when first married`~gss$`Highest year of school completed`)
+summary(model2)
+```
+```
+We can see from the scatterplot that it is a very weak, positive, linear relationship between educational years and age when they first married with some potential outliers on the y-axis. and the coefficient is 0.24. So I would say the educational years would only make a very small difference on the age when they first married.
+```
